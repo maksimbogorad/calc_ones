@@ -1,13 +1,13 @@
 C program that can be used to count the unit bits in a file.
 
-Build:
-make
+## Build:
+`make`
 
-Bash Test:
-./calc_ones <file>
+## Bash Test:
+`./calc_ones <file>`
 
-Test (using make):
-make test
+## Test (using make):
+`make test`
 
-Run:
-make run
+## Run:
+`make run`
