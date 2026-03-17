@@ -1,2 +1,6 @@
+a.out
+*.dSYM/
 *.o
 calc_ones
+.DS_Store
+test_big.bin
