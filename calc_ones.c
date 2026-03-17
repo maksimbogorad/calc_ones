@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#define MAX_SIZE 65536
+#define MAX_SIZE 8192
 
 enum
 {
@@ -11,33 +11,35 @@ enum
     readError = -2
 };
 
-void bitCountFunc(unsigned char * amountOnes)
+void bitCountFunc16(unsigned char * amountOnes16)
 {
-    if (amountOnes == NULL)
+    if (amountOnes16 == NULL)
     {
-        fprintf(stderr, "Array amountOnes is NULL\n");
+        fprintf(stderr, "Array amountOnes16 is NULL\n");
         return;
     }
 
-    int i;
+    uint32_t i;
 
-    for (i = 0; i < 256; i++)
+    for (i = 0; i < 65536; i++)
     {
         unsigned char count = 0;
-        unsigned char tmp = (unsigned char)i;
+        uint16_t tmp = (uint16_t)i;
 
         while (tmp)
         {
             count +=(unsigned char)(tmp & 1);
             tmp >>= 1;
         }
-        amountOnes[i] = count;
+
+        amountOnes16[i] = count;
     }
 }
 
-int countOnesInFile(FILE * from, unsigned char * amountOnes, uint64_t * result)
+int countOnesInFile(FILE * from, const unsigned char * amountOnes16, uint64_t * result)
 {
-    if (from == NULL || amountOnes == NULL || result == NULL)
+
+    if (from == NULL || amountOnes16 == NULL || result == NULL)
         return nullError;
 
     uint64_t totalAmountOnesBits = 0;
@@ -48,11 +50,15 @@ int countOnesInFile(FILE * from, unsigned char * amountOnes, uint64_t * result)
     {
         size_t i = 0;
 
-        while (i < read_info)
+        while (i + 1 < read_info)
         {
-            totalAmountOnesBits += amountOnes[buffer[i]];
-            i++;
+            uint16_t value = ((uint16_t)buffer[i]<<8) | (uint16_t)buffer[i + 1];
+            totalAmountOnesBits += amountOnes16[value];
+            i += 2;
         }
+
+        if (i < read_info)
+            totalAmountOnesBits += amountOnes16[buffer[i]];
     }
 
     if (ferror(from))
@@ -61,7 +67,6 @@ int countOnesInFile(FILE * from, unsigned char * amountOnes, uint64_t * result)
     *result = totalAmountOnesBits;
     return countNormal;
 }
-
 
 int main(int argc, char ** argv)
 {
@@ -78,12 +83,12 @@ int main(int argc, char ** argv)
         return 2;
     }
 
-    unsigned char amountOnes[256];
+    unsigned char amountOnes16[65536];
     uint64_t result;
     int status;
-    bitCountFunc(amountOnes);
+    bitCountFunc16(amountOnes16);
 
-    status = countOnesInFile(from, amountOnes, &result);
+    status = countOnesInFile(from, amountOnes16, &result);
     fclose(from);
 
     if (status == nullError)
@@ -99,6 +104,6 @@ int main(int argc, char ** argv)
     }
 
     printf("File %s contains %" PRIu64 " ones\n", argv[1], result);
-    
+
     return 0;
 }
