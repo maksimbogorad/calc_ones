@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #define MAX_SIZE 65536
 
 enum
 {
+    countNormal = 0,
     nullError = -1,
     readError = -2
 };
@@ -33,12 +35,12 @@ void bitCountFunc(unsigned char * amountOnes)
     }
 }
 
-int64_t countOnesInFile(FILE * from, unsigned char * amountOnes)
+int countOnesInFile(FILE * from, unsigned char * amountOnes, uint64_t * result)
 {
-    if (from == NULL || amountOnes == NULL)
+    if (from == NULL || amountOnes == NULL || result == NULL)
         return nullError;
 
-    int64_t totalAmountOnesBits = 0;
+    uint64_t totalAmountOnesBits = 0;
     unsigned char buffer[MAX_SIZE];
     size_t read_info;
 
@@ -56,8 +58,8 @@ int64_t countOnesInFile(FILE * from, unsigned char * amountOnes)
     if (ferror(from))
         return readError;
 
-    return totalAmountOnesBits;
-
+    *result = totalAmountOnesBits;
+    return countNormal;
 }
 
 
@@ -77,23 +79,26 @@ int main(int argc, char ** argv)
     }
 
     unsigned char amountOnes[256];
+    uint64_t result;
+    int status;
     bitCountFunc(amountOnes);
 
-    int64_t result = countOnesInFile(from, amountOnes);
+    status = countOnesInFile(from, amountOnes, &result);
     fclose(from);
-    if (result == nullError)
+
+    if (status == nullError)
     {
         fprintf(stderr, "NULL error\n");
         return 3;
     }
 
-    if (result == readError)
+    if (status == readError)
     {
         fprintf(stderr, "Read from file error\n");
         return 4;
     }
 
-    printf("File %s contains %lld ones\n", argv[1], result);
+    printf("File %s contains %" PRIu64 " ones\n", argv[1], result);
     
     return 0;
 }
